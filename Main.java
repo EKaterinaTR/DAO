@@ -20,7 +20,11 @@ public class Main {
         Student s = studentsRepository.findById(2L);
         System.out.println(s);
         s.setFirstName("Роберт");
+        s.setAge(20);
         studentsRepository.update(s);
+        Student student = new Student(null,"М","Барсиков",18,111);
+        studentsRepository.save(student);
+        System.out.println(student.getId());
         connection.close();
 
     }

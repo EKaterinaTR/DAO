@@ -1,5 +1,6 @@
 package model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -25,6 +26,7 @@ public class Student {
         this.lastName = lastName;
         this.age = age;
         this.groupNumber = groupNumber;
+        mentors = new ArrayList<>();
     }
 
     public Long getId() {
@@ -67,6 +69,10 @@ public class Student {
         this.groupNumber = groupNumber;
     }
 
+    public void setMentors(List<Mentor> mentors) {
+        this.mentors = mentors;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -92,6 +98,7 @@ public class Student {
                 .add("lastName='" + lastName + "'")
                 .add("age=" + age)
                 .add("groupNumber=" + groupNumber)
+                .add(mentors.toString())
                 .toString();
     }
 }
