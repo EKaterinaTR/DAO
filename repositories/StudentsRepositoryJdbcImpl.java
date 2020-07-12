@@ -20,7 +20,11 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
 
     //language=SQL
     private static final String SQL_SELECT_BY_ID = "select * from student where id = ";
-    private static final String SQL_SELECT_ALL = "select student.id as stud_id,student.first_name as stud_fn,student.last_name as stud_ln,age,group_number,mentor.id,mentor.first_name,mentor.last_name from student left join mentor on student.id = student_id order by student.id";
+    private static final String SQL_SELECT_BY_AGE = "select * from student where age = ";
+    private static final String SQL_SELECT_ALL = "select student.id as stud_id,student.first_name as stud_fn," +
+            "student.last_name as stud_ln,age,group_number,mentor.id,mentor.first_name,mentor.last_name" +
+            " from student left join mentor on student.id = student_id " +
+            "order by student.id";
     private static final String SQL_UPDATE_START = "update student set ";
     private static final String SQL_UPDATE_FIRST_NAME="first_name = ";
     private static final String SQL_UPDATE_LAST_NAME =", last_name = ";
@@ -35,10 +39,46 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
     public StudentsRepositoryJdbcImpl(Connection connection) {
         this.connection = connection;
     }
-
+    //+ менторы отдельным запросом
     @Override
     public List<Student> findAllByAge(int age) {
-        return null;
+        Statement statement = null;
+        ResultSet result = null;
+        List<Student>list = new ArrayList<>();
+
+        try {
+            statement = connection.createStatement();
+            result = statement.executeQuery(SQL_SELECT_BY_AGE + age);
+            while (result.next()) {
+                Student s = new Student(
+                        result.getLong("id"),
+                        result.getString("first_name"),
+                        result.getString("last_name"),
+                        result.getInt("age"),
+                        result.getInt("group_number")
+                );
+                s.setMentors((new MentorRepositoryJdbcImpl(connection)).findByStudentId(s.getId()));
+                list.add(s);
+            }
+        } catch (SQLException e) {
+            throw new IllegalArgumentException(e);
+        } finally {
+            if (result != null) {
+                try {
+                    result.close();
+                } catch (SQLException e) {
+                    // ignore
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    // ignore
+                }
+            }
+        }
+        return list;
     }
 
     //+
@@ -71,7 +111,9 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
                         s
                 ));
             }
-            list.add(s);
+            if(s != null) {
+                list.add(s);
+            }
         } catch (SQLException e) {
             throw new IllegalArgumentException(e);
         } finally {
@@ -93,7 +135,7 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
         return list;
     }
 
-    // менторы отдельным запросом
+    //+ менторы отдельным запросом
     @Override
     public Student findById(Long id) {
         Statement statement = null;
@@ -197,7 +239,7 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
     }
 
 
-    //+ без меторов
+    //+ без менторов
     @Override
     public void update(Student entity) {
         Statement statement = null;

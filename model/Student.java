@@ -102,7 +102,7 @@ public class Student {
                 .add("lastName='" + lastName + "'")
                 .add("age=" + age)
                 .add("groupNumber=" + groupNumber)
-                .add(mentors.toString())
+                .add((mentors != null)?mentors.toString():null)
                 .toString();
     }
 }
