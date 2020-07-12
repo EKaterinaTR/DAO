@@ -19,8 +19,14 @@ import java.util.List;
 public class StudentsRepositoryJdbcImpl implements StudentsRepository {
 
     //language=SQL
-    private static final String SQL_SELECT_BY_ID = "select * from student where id = ";
-    private static final String SQL_SELECT_BY_AGE = "select * from student where age = ";
+    private static final String SQL_SELECT_BY_ID = "select student.id as stud_id,student.first_name as stud_fn,student.last_name as stud_ln,age,group_number,\n" +
+            "       mentor.id,mentor.first_name,mentor.last_name\n" +
+            "from student left join mentor on student.id = student_id\n" +
+            "where student.id = ";
+    private static final String SQL_SELECT_BY_AGE = "select student.id as stud_id,student.first_name as stud_fn,student.last_name as stud_ln,age,group_number,\n" +
+            "       mentor.id,mentor.first_name,mentor.last_name\n" +
+            "from student left join mentor on student.id = student_id\n" +
+            "where age = ";
     private static final String SQL_SELECT_ALL = "select student.id as stud_id,student.first_name as stud_fn," +
             "student.last_name as stud_ln,age,group_number,mentor.id,mentor.first_name,mentor.last_name" +
             " from student left join mentor on student.id = student_id " +
@@ -33,31 +39,46 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
     private static final String SQL_UPDATE_END = "where id = ";
     private static final String SQL_INSERT_START = "insert into student(first_name,last_name,age,group_number) VALUES(";
     private static final String SQL_INSERT_END = ") returning id";
+    private static final String SQL_DELETE = "delete from mentor where student_id = ";
 
     private Connection connection;
 
     public StudentsRepositoryJdbcImpl(Connection connection) {
         this.connection = connection;
     }
-    //+ менторы отдельным запросом
+    //+
     @Override
     public List<Student> findAllByAge(int age) {
         Statement statement = null;
         ResultSet result = null;
         List<Student>list = new ArrayList<>();
+        Student s = null;
 
         try {
             statement = connection.createStatement();
             result = statement.executeQuery(SQL_SELECT_BY_AGE + age);
             while (result.next()) {
-                Student s = new Student(
-                        result.getLong("id"),
-                        result.getString("first_name"),
-                        result.getString("last_name"),
-                        result.getInt("age"),
-                        result.getInt("group_number")
-                );
-                s.setMentors((new MentorRepositoryJdbcImpl(connection)).findByStudentId(s.getId()));
+                long id = result.getLong("stud_id");
+                if(s == null || id != s.getId()){
+                    if(s !=null ) list.add(s);
+                    s = new Student(
+                            id,
+                            result.getString("stud_fn"),
+                            result.getString("stud_ln"),
+                            result.getInt("age"),
+                            result.getInt("group_number")
+                    );
+                }
+                if(result.getLong("id") != 0) {
+                    s.getMentors().add(new Mentor(
+                            result.getLong("id"),
+                            result.getString("first_name"),
+                            result.getString("last_name"),
+                            s
+                    ));
+                }
+            }
+            if(s != null) {
                 list.add(s);
             }
         } catch (SQLException e) {
@@ -104,12 +125,14 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
                             result.getInt("group_number")
                     );
                 }
-                s.getMentors().add(new Mentor(
-                        result.getLong("id"),
-                        result.getString("first_name"),
-                        result.getString("last_name"),
-                        s
-                ));
+                if(result.getLong("id") !=0 ) {
+                    s.getMentors().add(new Mentor(
+                            result.getLong("id"),
+                            result.getString("first_name"),
+                            result.getString("last_name"),
+                            s
+                    ));
+                }
             }
             if(s != null) {
                 list.add(s);
@@ -135,7 +158,7 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
         return list;
     }
 
-    //+ менторы отдельным запросом
+    //+
     @Override
     public Student findById(Long id) {
         Statement statement = null;
@@ -146,13 +169,28 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
             result = statement.executeQuery(SQL_SELECT_BY_ID + id);
             if (result.next()) {
                 Student s = new Student(
-                        result.getLong("id"),
-                        result.getString("first_name"),
-                        result.getString("last_name"),
+                        result.getLong("stud_id"),
+                        result.getString("stud_fn"),
+                        result.getString("stud_ln"),
                         result.getInt("age"),
                         result.getInt("group_number")
                 );
-                s.setMentors((new MentorRepositoryJdbcImpl(connection)).findByStudentId(s.getId()));
+                if(result.getLong("id" ) != 0){
+                    s.getMentors().add(new Mentor(
+                            result.getLong("id"),
+                            result.getString("first_name"),
+                            result.getString("last_name"),
+                            s
+                    ));
+                }
+                while (result.next()) {
+                    s.getMentors().add(new Mentor(
+                            result.getLong("id"),
+                            result.getString("first_name"),
+                            result.getString("last_name"),
+                            s
+                    ));
+                }
                 return s;
             } else return null;
         } catch (SQLException e) {
@@ -239,7 +277,7 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
     }
 
 
-    //+ без менторов
+    //+
     @Override
     public void update(Student entity) {
         Statement statement = null;
@@ -256,7 +294,21 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
                     + SQL_UPDATE_GROUP_NUMBER
                     + entity.getGroupNumber()
                     + SQL_UPDATE_END + entity.getId());
-            //без обновления менторов
+            statement.executeUpdate(SQL_DELETE + entity.getId());
+
+            List<Mentor> mentors = entity.getMentors();
+
+            String SQL_SAVE_MENTORS = "insert into mentor(id,first_name,last_name,student_id) values";
+            Mentor last = mentors.get(mentors.size()-1);
+            for (Mentor m : mentors) {
+                SQL_SAVE_MENTORS+= "("+ m.getId() +
+                        ',' + ((m.getFirstName() == null)?null:('\''+ m.getFirstName()+'\'')) +
+                        ',' + ((m.getLastName() == null)?null:('\''+ m.getLastName()+'\'')) +
+                        ',' + entity.getId()+')';
+                SQL_SAVE_MENTORS+=(m.equals(last))?';':',';
+            }
+
+            statement.executeUpdate(SQL_SAVE_MENTORS);
 
         } catch (SQLException e) {
             throw new IllegalArgumentException(e);
