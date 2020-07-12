@@ -16,11 +16,11 @@ public class Student {
     private Long id;
     private String firstName;
     private String lastName;
-    private int age;
-    private int groupNumber;
+    private Integer age;
+    private Integer groupNumber;
     private List<Mentor> mentors;
 
-    public Student(Long id, String firstName, String lastName, int age, int groupNumber) {
+    public Student(Long id, String firstName, String lastName, Integer age, Integer groupNumber) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -53,19 +53,19 @@ public class Student {
         this.lastName = lastName;
     }
 
-    public int getAge() {
+    public Integer getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(Integer age) {
         this.age = age;
     }
 
-    public int getGroupNumber() {
+    public Integer getGroupNumber() {
         return groupNumber;
     }
 
-    public void setGroupNumber(int groupNumber) {
+    public void setGroupNumber(Integer groupNumber) {
         this.groupNumber = groupNumber;
     }
 

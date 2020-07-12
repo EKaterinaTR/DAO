@@ -31,12 +31,8 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
             "student.last_name as stud_ln,age,group_number,mentor.id,mentor.first_name,mentor.last_name" +
             " from student left join mentor on student.id = student_id " +
             "order by student.id";
-    private static final String SQL_UPDATE_START = "update student set ";
-    private static final String SQL_UPDATE_FIRST_NAME="first_name = ";
-    private static final String SQL_UPDATE_LAST_NAME =", last_name = ";
-    private static final String SQL_UPDATE_AGE =", age = ";
-    private static final String SQL_UPDATE_GROUP_NUMBER =", group_number = ";
-    private static final String SQL_UPDATE_END = "where id = ";
+    private static final String SQL_UPDATE_START = "update student set first_name = %s, last_name = %s," +
+            " age = %d, group_number = %d where id = %d ";
     private static final String SQL_INSERT_START = "insert into student(first_name,last_name,age,group_number) VALUES(";
     private static final String SQL_INSERT_END = ") returning id";
     private static final String SQL_DELETE = "delete from mentor where student_id = ";
@@ -284,16 +280,12 @@ public class StudentsRepositoryJdbcImpl implements StudentsRepository {
 
         try {
             statement = connection.createStatement();
-            statement.executeUpdate(SQL_UPDATE_START
-                    + SQL_UPDATE_FIRST_NAME
-                    +((entity.getFirstName() == null)?null:('\''+ entity.getFirstName()+'\''))
-                    + SQL_UPDATE_LAST_NAME
-                    + ((entity.getLastName() == null)?null:('\''+ entity.getLastName()+'\''))
-                    + SQL_UPDATE_AGE
-                    + entity.getAge()
-                    + SQL_UPDATE_GROUP_NUMBER
-                    + entity.getGroupNumber()
-                    + SQL_UPDATE_END + entity.getId());
+            statement.executeUpdate(String.format(SQL_UPDATE_START,
+                    ((entity.getFirstName() == null)?null:('\''+ entity.getFirstName()+'\'')),
+                    ((entity.getLastName() == null)?null:('\''+ entity.getLastName()+'\'')),
+                    entity.getAge(),
+                    entity.getGroupNumber(),
+                    entity.getId()));
             statement.executeUpdate(SQL_DELETE + entity.getId());
 
             List<Mentor> mentors = entity.getMentors();
