@@ -69,6 +69,10 @@ public class Student {
         this.groupNumber = groupNumber;
     }
 
+    public List<Mentor> getMentors() {
+        return mentors;
+    }
+
     public void setMentors(List<Mentor> mentors) {
         this.mentors = mentors;
     }
