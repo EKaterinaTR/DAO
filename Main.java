@@ -14,7 +14,7 @@ public class Main {
 
     private static final String URL = "jdbc:postgresql://localhost:5432/University";
     private static final String USER = "postgres";
-    private static final String PASSWORD = "pos3ril10";
+    private static final String PASSWORD = "";
 
 
     public static void main(String[] args) throws SQLException {
